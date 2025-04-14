@@ -1,0 +1,49 @@
+services:
+  meridian:
+    image: ${IMAGE_NAME}:${IMAGE_VERSION:-0.1.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WORKDIR: /project
+    deploy:
+      resources:
+        limits:
+          memory: 5g
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+      - type: bind
+        source: ~/.gitconfig
+        target: /root/.gitconfig
+      - type: bind
+        source: ~/.ssh
+        target: /root/.ssh
+
+    container_name: ${IMAGE_NAME}_${IMAGE_VERSION:-0.1.0}
+    environment:
+      TZ: Asia/Tokyo
+    #   - OPENAI_API_KEY=${OPENAI_API_KEY}
+    #   - OPENAI_API_URL=${OPENAI_API_URL}
+    tty: true
+    restart: always
+    entrypoint: >
+      /bin/bash -c
+      "poetry config virtualenvs.create false && tail -f /dev/null"
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: meridian
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres-data:
